@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Analysis</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main>
+        <section id="resume-analysis">
+            <h2>Resume Analysis Dashboard</h2>
+            <form>
+                <input type="file" id="resume" accept=".pdf">
+                <div class="button-group">
+                    <button type="button" id="analyze-btn">Analyze Resume</button>
+                </div>
+            </form>
+            <div id="predictions-output">
+                Upload your resume (PDF) to get started with analysis...
+            </div>
+            <div id="chart-container">
+                <h3>Skill Distribution</h3>
+                <canvas id="chart"></canvas>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
