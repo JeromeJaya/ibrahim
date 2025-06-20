@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resume Analysis</title>
+  
+  <!-- Correct link to static folder (Flask way) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  
+  <!-- External libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <main>
+    <section id="resume-analysis">
+      <h2>Resume Analysis Dashboard</h2>
+      <form id="upload-form">
+        <input type="file" id="resume" accept=".pdf" required>
+        <div class="button-group">
+          <button type="submit" id="analyze-btn">Analyze Resume</button>
+        </div>
+      </form>
+      <div id="predictions-output">
+        Upload your resume (PDF) to get started with analysis...
+      </div>
+      <div id="chart-container" style="display: none;">
+        <h3>Skill Distribution</h3>
+        <canvas id="chart"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    document.getElementById('upload-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      analyzeResume();
+    });
+
+    let analysisResults = {};
+    let myChart = null;
+
+    async function analyzeResume() {
+      const fileInput = document.getElementById('resume');
+      const file = fileInput.files[0];
+
+      if (!file || file.type !== 'application/pdf') {
+        alert('Please upload a valid PDF file.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('resume', file);
+
+      try {
+        const response = await fetch('http://127.0.0.1:5000/auth/analyze', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to analyze resume.');
+        }
+
+        const data = await response.json();
+
+        analysisResults = {
+          jobTitle: data.jobTitle || [],
+          skills: data.skills || [],
+          atsScore: data.atsScore || 0,
+          proficiencyData: data.proficiencyData || {},
+          rawText: data.rawText || ''
+        };
+
+        displayResults();
+      } catch (error) {
+        console.error('Error analyzing resume:', error);
+        document.getElementById('predictions-output').innerHTML = 
+          `<p style="color: red;">Error analyzing resume: ${error.message}</p>`;
+      }
+    }
+
+    function displayResults() {
+      const outputDiv = document.getElementById('predictions-output');
+      outputDiv.innerHTML = `
+        <h3>Analysis Results</h3>
+        <p><strong>Suggested Positions:</strong> ${analysisResults.jobTitle.join(', ')}</p>
+        <p><strong>ATS Score:</strong> ${analysisResults.atsScore}%</p>
+        <p><strong>Identified Skills:</strong></p>
+        <ul>${analysisResults.skills.map(skill =>
+          `<li>${skill.charAt(0).toUpperCase() + skill.slice(1)}</li>`
+        ).join('')}</ul>
+      `;
+
+      if (analysisResults.skills.length > 0) {
+        generateChart(analysisResults.proficiencyData);
+        document.getElementById('chart-container').style.display = 'block';
+      }
+    }
+
+    function generateChart(proficiencyData) {
+      const ctx = document.getElementById('chart').getContext('2d');
+
+      if (myChart) {
+        myChart.destroy();
+      }
+
+      const skills = Object.keys(proficiencyData);
+      const values = Object.values(proficiencyData);
+
+      myChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: skills,
+          datasets: [{
+            label: 'Skill Proficiency',
+            data: values,
+            backgroundColor: 'rgba(0, 64, 128, 0.2)',
+            borderColor: '#004080',
+            pointBackgroundColor: '#004080',
+            pointBorderColor: '#fff',
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                stepSize: 20
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
